@@ -6,7 +6,8 @@ from qiskit import QuantumCircuit
 
 def gen_circ_ls(base_qc: QuantumCircuit, num_partitions: int):
 
-    ''' generates a list of circuits
+    ''' Define a base circuit and create a list of circuits that are
+    repititions of the base circuits on increasing times
     inputs:
         base_qc: the base quantum circuit to be repeated
         num_partitions: the number of Phi-maps to be used for QPT
@@ -35,7 +36,8 @@ def gen_qubit_ls(total_qubits: int, num_qubit: int, repeat: bool):
 
     returns:
     ls: a list of list of indicies for the indicies of the qubits used on the
-    devices for each experiment.
+    devices for each experiment. For example, we want to ouput 
+    [[0, 1], [2, 3], [4, 5], ...]
     '''
 
     qubit_arr = arange(0, total_qubits)
@@ -56,6 +58,10 @@ def exp_2q(qc_ls: list, backend, qubit_ls: list, analysis='default'):
     backend
     qubit_ls: list of qubits generated from gen_qubit_ls with repeat=True
     analysis: analysis method provided by qiskit_experiment
+
+    We create a parallel circuit of half of the QPTs, those experiments
+    run for 144 circuits. The other 144 circuits performs QPT for the
+    second half of maps
     '''
 
     exp_ls = []
