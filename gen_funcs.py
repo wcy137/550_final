@@ -17,7 +17,7 @@ def gen_circ_ls(base_qc: QuantumCircuit, num_partitions: int):
     '''
 
     qc_ls = []
-    for i in range(num_partitions):
+    for i in range(1, num_partitions+1):
         curr_qc = base_qc.repeat(i)
         curr_qc = curr_qc.decompose(reps=1)
         qc_ls.append(curr_qc)
@@ -109,6 +109,6 @@ def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
                                      physical_qubits=curr_qubits_used,
                                      analysis=analysis)
         exp_ls.append(curr_exp)
-        parallel_exp = [ParallelExperiment(exp_ls,
-                                           flatten_result=False)]
-        return parallel_exp
+    parallel_exp = ParallelExperiment(exp_ls,
+                                      flatten_results=False)
+    return parallel_exp
