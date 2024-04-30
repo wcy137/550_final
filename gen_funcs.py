@@ -36,7 +36,7 @@ def gen_qubit_ls(total_qubits: int, num_qubit: int, repeat: bool):
 
     returns:
     ls: a list of list of indicies for the indicies of the qubits used on the
-    devices for each experiment. For example, we want to ouput 
+    devices for each experiment. For example, we want to ouput
     [[0, 1], [2, 3], [4, 5], ...]
     '''
 
@@ -49,10 +49,13 @@ def gen_qubit_ls(total_qubits: int, num_qubit: int, repeat: bool):
     return qubit_ls
 
 
-def exp_2q(qc_ls: list, backend, qubit_ls: list, analysis='default'):
+def batch_2_parallel_exp_2q(qc_ls: list, backend, qubit_ls: list,
+                            analysis='default'):
 
     ''' generates a BatchExperiment object that contains two parallel
-    experiments
+    experiments. This generation of experiments can only be used by
+    2-qubit systems on 127 qubit devices.
+
     inputs:
     qc_ls: list of quantum circuits that are repeated sequences
     backend
@@ -61,8 +64,10 @@ def exp_2q(qc_ls: list, backend, qubit_ls: list, analysis='default'):
 
     We create a parallel circuit of half of the QPTs, those experiments
     run for 144 circuits. The other 144 circuits performs QPT for the
-    second half of maps
+    second half of maps. We then return those experiment ready to be
+    run.
     '''
+    # FIXME: ouputs no results
 
     exp_ls = []
     for i in range(len(qc_ls)):
@@ -78,3 +83,32 @@ def exp_2q(qc_ls: list, backend, qubit_ls: list, analysis='default'):
                                           flatten_results=False)]
     batch_exp = BatchExperiment(parallel_exp_ls, flatten_results=False)
     return batch_exp
+
+
+def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
+                      analysis='default'):
+    ''' generates a ParallelExperiment object that contains floor(127/n) QPT
+    experiments where n is the number of qubits of the system. The generated
+    experiments can only be implemented on 1 or 2-qubit systems
+
+    inputs
+    qc_ls: list of quantum circuits that are repeated sequences
+    backend
+    qubit_ls: list of qubits generated from gen_qubit_ls with repeat=True
+    analysis: analysis method provided by qiskit_experiment
+    '''
+    # TODO: add a max_circuits options to expand the implementation of
+    # experiments onto more qubits by submitting multiple runs to ibm.
+
+    exp_ls = []
+    exp_ls = []
+    for i in range(len(qc_ls)):
+        curr_qc = qc_ls[i]
+        curr_qubits_used = qubit_ls[i]
+        curr_exp = ProcessTomography(curr_qc, backend,
+                                     physical_qubits=curr_qubits_used,
+                                     analysis=analysis)
+        exp_ls.append(curr_exp)
+        parallel_exp = [ParallelExperiment(exp_ls,
+                                           flatten_result=False)]
+        return parallel_exp
