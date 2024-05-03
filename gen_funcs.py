@@ -1,4 +1,4 @@
-from qiskit_experiments.library.tomography import ProcessTomography
+from qiskit_experiments.library.tomography import ProcessTomography, MitigatedProcessTomography
 from qiskit_experiments.framework import ParallelExperiment, BatchExperiment
 from numpy import arange
 from qiskit import QuantumCircuit
@@ -67,7 +67,6 @@ def batch_2_parallel_exp_2q(qc_ls: list, backend, qubit_ls: list,
     second half of maps. We then return those experiment ready to be
     run.
     '''
-    # FIXME: ouputs no results
 
     exp_ls = []
     for i in range(len(qc_ls)):
@@ -86,7 +85,7 @@ def batch_2_parallel_exp_2q(qc_ls: list, backend, qubit_ls: list,
 
 
 def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
-                      analysis='default'):
+                      mitigation=False, analysis='default'):
     ''' generates a ParallelExperiment object that contains floor(127/n) QPT
     experiments where n is the number of qubits of the system. The generated
     experiments can only be implemented on 1 or 2-qubit systems
@@ -105,7 +104,12 @@ def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
     for i in range(len(qc_ls)):
         curr_qc = qc_ls[i]
         curr_qubits_used = qubit_ls[i]
-        curr_exp = ProcessTomography(curr_qc, backend,
+        if mitigation:
+            curr_exp = MitigatedProcessTomography(curr_qc, backend,
+                                     physical_qubits=curr_qubits_used,
+                                     analysis=analysis)
+        else:
+            curr_exp = ProcessTomography(curr_qc, backend,
                                      physical_qubits=curr_qubits_used,
                                      analysis=analysis)
         exp_ls.append(curr_exp)
