@@ -112,3 +112,28 @@ def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
     parallel_exp = ParallelExperiment(exp_ls,
                                       flatten_results=False)
     return parallel_exp
+
+
+
+
+
+###################################################
+
+def gen_delay_circ_ls(num_qubits:int, num_maps: int, total_us_time:int):
+    """
+    Generates delay circuits with increasing delays simulating the identity gate
+    
+    Args:
+        num_qubits: number of qubits to execute the circuit on
+        num_maps: number of delay circuits to generate
+        total_us_time: total time in microseconds
+    """
+    qc_ls = []
+    dt = total_us_time/num_maps
+    t = dt
+    while t <= total_us_time:
+        base_qc = QuantumCircuit(num_qubits)
+        base_qc.delay(t, unit='us')
+        qc_ls.append(base_qc)
+        t += dt
+    return qc_ls
