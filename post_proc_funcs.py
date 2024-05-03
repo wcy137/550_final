@@ -63,7 +63,7 @@ def compute_Drhp(intmdt_map_ls, base_circ_time=90):
     '''
     gt = []
     for map in intmdt_map_ls:
-        gt.append((np.linalg.norm(Choi(map), ord=1) - 1) / base_circ_time)
+        gt.append((np.linalg.norm(Choi(map), ord=1) - 1))
     Nrhp = sum(gt)
     Drhp = Nrhp / (1 + Nrhp)
     return Drhp
