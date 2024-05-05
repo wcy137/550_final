@@ -67,3 +67,23 @@ def compute_Drhp(intmdt_map_ls, base_circ_time=90):
     Nrhp = sum(gt)
     Drhp = Nrhp / (1 + Nrhp)
     return Drhp
+
+def compute_intermediate_maps(final_evo_list, pseudo_inv=False):
+    ''' computes the last intermediate map from the list of intermediate maps
+    inputs:
+    phi_N: the last map of the sequence
+    intermediate_list: list of intermediate maps
+
+    output: the last intermediate map
+    '''
+    dim = 2 ** (final_evo_list[0].num_qubits * 2)
+    # first compute the intermediate maps 
+    intermediate_maps = []
+    intermediate_maps.append(final_evo_list[0])
+    for i in range(1, len(final_evo_list)):
+        curr_applied_inv = np.identity(dim)
+        for j in range(i):
+            curr_applied_inv = curr_applied_inv @ np.linalg.pinv(intermediate_maps[j])
+        intermediate_maps.append(final_evo_list[i] @ curr_applied_inv)
+
+    return intermediate_maps
