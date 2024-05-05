@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import sqrtm
-from scympy import Matrix
+# from scympy import Matrix
 
 def trace_norm(matrix):
     """
@@ -14,10 +14,11 @@ def trace_norm(matrix):
     """
     temp = np.matmul(matrix,matrix.conj().T)
     # hermitian and unitary matrices are always diagonalizable
-    if Matrix(temp).is_diagonalizable():
-        return np.trace(sqrtm(temp))
-    else:
-        raise Exception("input matrix A such that A.A^{dagger} is not diagonalizable")
+    return np.trace(sqrtm(temp))
+    # if Matrix(temp).is_diagonalizable():
+    #     return np.trace(sqrtm(temp))
+    # else:
+    #     raise Exception("input matrix A such that A.A^{dagger} is not diagonalizable")
 
 def get_maximally_entagled_density_matrix(n):
     """
@@ -88,4 +89,28 @@ def first_non_markovianity_measure(kraus_map_list, operating_qubits, delta_t):
     return G / (G + 1)
 
 
+#############################################
 
+def trace_distance(rho1, rho2):
+    rho1 = np.array(rho1)
+    rho2 = np.array(rho2)
+    return 0.5 * np.linalg.norm(rho1 - rho2, ord=1)
+
+def second_non_markovian_helper_function(states):
+    """
+    States must be a list of density matrices of the system at different times.
+    basis_states[i] = [[p_{1,i} (t1), p_{2,i} (t1)], [p_{1,i} (t2), p_{2,i} (t2)], ...]
+    basis_states[i] are in some basis {X,Y,Z}
+
+    states = [basis_states[X], basis_states[Y], basis_states[Z]]
+    """
+    basis_values = [0,0,0] # basis values for [X,Y,Z]
+
+    for basis, basis_states in enumerate(states):
+        n = len(basis_states)
+        for i in range(0,n-1,1):
+            before = trace_distance(basis_states[i][0],basis_states[i][1])
+            after = trace_distance(basis_states[i+1][0],basis_states[i+1][1])
+            sigma = after - before # derivative of trace distance
+            basis_values[basis] += max(sigma,0)
+    return max(basis_values)

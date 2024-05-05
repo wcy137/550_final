@@ -1,4 +1,4 @@
-from qiskit_experiments.library.tomography import ProcessTomography, MitigatedProcessTomography
+from qiskit_experiments.library.tomography import ProcessTomography, MitigatedProcessTomography, StateTomography
 from qiskit_experiments.framework import ParallelExperiment, BatchExperiment
 from numpy import arange
 from qiskit import QuantumCircuit
@@ -85,7 +85,7 @@ def batch_2_parallel_exp_2q(qc_ls: list, backend, qubit_ls: list,
 
 
 def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
-                      mitigation=False, analysis='default'):
+                      mitigation=False, analysis='default', state_tom=False):
     ''' generates a ParallelExperiment object that contains floor(127/n) QPT
     experiments where n is the number of qubits of the system. The generated
     experiments can only be implemented on 1 or 2-qubit systems
@@ -104,12 +104,17 @@ def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
     for i in range(len(qc_ls)):
         curr_qc = qc_ls[i]
         curr_qubits_used = qubit_ls[i]
-        if mitigation:
+        curr_exp = None
+        if mitigation and not state_tom:
             curr_exp = MitigatedProcessTomography(curr_qc, backend,
                                      physical_qubits=curr_qubits_used,
                                      analysis=analysis)
-        else:
+        elif not mitigation and not state_tom:
             curr_exp = ProcessTomography(curr_qc, backend,
+                                     physical_qubits=curr_qubits_used,
+                                     analysis=analysis)
+        else: # must be state tomography
+            curr_exp = StateTomography(curr_qc, backend,
                                      physical_qubits=curr_qubits_used,
                                      analysis=analysis)
         exp_ls.append(curr_exp)
@@ -120,10 +125,9 @@ def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
 
 
 
-
 ###################################################
 
-def gen_delay_circ_ls(num_qubits:int, num_maps: int, total_us_time:int):
+def gen_delay_circ_ls(num_qubits:int, num_maps: int, total_us_time:int, start_state='0'):
     """
     Generates delay circuits with increasing delays simulating the identity gate
     
@@ -133,11 +137,46 @@ def gen_delay_circ_ls(num_qubits:int, num_maps: int, total_us_time:int):
         total_us_time: total time in microseconds
     """
     qc_ls = []
-    dt = total_us_time/num_maps
+    dt = round(total_us_time/num_maps,1)
     t = dt
     while t <= total_us_time:
         base_qc = QuantumCircuit(num_qubits)
+        base_qc = prepare_state(base_qc, start_state)
         base_qc.delay(t, unit='us')
         qc_ls.append(base_qc)
         t += dt
     return qc_ls
+
+
+def prepare_state(qc, num_qubits, start_state='0'):
+    """
+    Prepares the initial state of the circuit
+    
+    Args:
+        qc: QuantumCircuit object
+        start_state: desired initial state of the circuit
+    """
+    if start_state == '0':
+        pass
+    elif start_state == '1':
+        for i in range(num_qubits):
+            qc.x(i)
+    elif start_state == '+':
+        for i in range(num_qubits):
+            qc.h(i)
+    elif start_state == '-':
+        for i in range(num_qubits):
+            qc.x(i)
+            qc.h(i)
+    elif start_state == '+i':
+        for i in range(num_qubits):
+            qc.h(i)
+            qc.s(i)
+    elif start_state == '-i':
+        for i in range(num_qubits):
+            qc.x(i)
+            qc.h(i)
+            qc.s(i)
+    else:
+        raise ValueError("Invalid start state. Must be either '0', '1', '+', '-', '+i', or '-i'")
+    return qc
