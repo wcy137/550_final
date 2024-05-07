@@ -1,4 +1,4 @@
-from qiskit_experiments.library.tomography import ProcessTomography, MitigatedProcessTomography, StateTomography
+from qiskit_experiments.library.tomography import ProcessTomography, MitigatedProcessTomography, StateTomography, MitigatedStateTomography
 from qiskit_experiments.framework import ParallelExperiment, BatchExperiment
 from numpy import arange
 from qiskit import QuantumCircuit
@@ -113,8 +113,12 @@ def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
             curr_exp = ProcessTomography(curr_qc, backend,
                                      physical_qubits=curr_qubits_used,
                                      analysis=analysis)
-        else: # must be state tomography
+        elif not mitigation and state_tom: 
             curr_exp = StateTomography(curr_qc, backend,
+                                     physical_qubits=curr_qubits_used,
+                                     analysis=analysis)
+        elif mitigation and state_tom:
+            curr_exp = MitigatedStateTomography(curr_qc, backend,
                                      physical_qubits=curr_qubits_used,
                                      analysis=analysis)
         exp_ls.append(curr_exp)
