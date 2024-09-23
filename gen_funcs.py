@@ -1,4 +1,5 @@
-from qiskit_experiments.library.tomography import ProcessTomography, MitigatedProcessTomography, StateTomography, MitigatedStateTomography
+from qiskit_experiments.library.tomography import (ProcessTomography,
+                                                   MitigatedProcessTomography)
 from qiskit_experiments.framework import ParallelExperiment, BatchExperiment
 from numpy import arange
 from qiskit import QuantumCircuit
@@ -85,7 +86,7 @@ def batch_2_parallel_exp_2q(qc_ls: list, backend, qubit_ls: list,
 
 
 def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
-                      mitigation=False, analysis='default', state_tom=False):
+                      mitigation=False, analysis='default'):
     ''' generates a ParallelExperiment object that contains floor(127/n) QPT
     experiments where n is the number of qubits of the system. The generated
     experiments can only be implemented on 1 or 2-qubit systems
@@ -100,87 +101,67 @@ def parallel_exp_1q2q(qc_ls: list, backend, qubit_ls: list,
     # experiments onto more qubits by submitting multiple runs to ibm.
 
     exp_ls = []
-    exp_ls = []
     for i in range(len(qc_ls)):
         curr_qc = qc_ls[i]
         curr_qubits_used = qubit_ls[i]
-        curr_exp = None
-        if mitigation and not state_tom:
+        if mitigation:
             curr_exp = MitigatedProcessTomography(curr_qc, backend,
-                                     physical_qubits=curr_qubits_used,
-                                     analysis=analysis)
-        elif not mitigation and not state_tom:
+                                                  physical_qubits=curr_qubits_used,
+                                                  analysis=analysis)
+        else:
             curr_exp = ProcessTomography(curr_qc, backend,
-                                     physical_qubits=curr_qubits_used,
-                                     analysis=analysis)
-        elif not mitigation and state_tom: 
-            curr_exp = StateTomography(curr_qc, backend,
-                                     physical_qubits=curr_qubits_used,
-                                     analysis=analysis)
-        elif mitigation and state_tom:
-            curr_exp = MitigatedStateTomography(curr_qc, backend,
-                                     physical_qubits=curr_qubits_used,
-                                     analysis=analysis)
+                                         physical_qubits=curr_qubits_used,
+                                         analysis=analysis)
         exp_ls.append(curr_exp)
     parallel_exp = ParallelExperiment(exp_ls,
                                       flatten_results=False)
     return parallel_exp
 
 
-
-
-###################################################
-
-def gen_delay_circ_ls(num_qubits:int, num_maps: int, total_us_time:int, start_state='0'):
+def gen_delay_circ_ls(num_qubits: int, num_maps: int, total_us_time: int):
     """
-    Generates delay circuits with increasing delays simulating the identity gate
-    
+    Generates delay circuits with increasing delays simulating the identity
+    gate
+
     Args:
         num_qubits: number of qubits to execute the circuit on
         num_maps: number of delay circuits to generate
         total_us_time: total time in microseconds
     """
     qc_ls = []
-    dt = round(total_us_time/num_maps,1)
+    dt = total_us_time/num_maps
     t = dt
     while t <= total_us_time:
         base_qc = QuantumCircuit(num_qubits)
-        base_qc = prepare_state(base_qc, start_state)
         base_qc.delay(t, unit='us')
         qc_ls.append(base_qc)
         t += dt
     return qc_ls
 
 
-def prepare_state(qc, num_qubits, start_state='0'):
-    """
-    Prepares the initial state of the circuit
-    
-    Args:
-        qc: QuantumCircuit object
-        start_state: desired initial state of the circuit
-    """
-    if start_state == '0':
-        pass
-    elif start_state == '1':
-        for i in range(num_qubits):
-            qc.x(i)
-    elif start_state == '+':
-        for i in range(num_qubits):
-            qc.h(i)
-    elif start_state == '-':
-        for i in range(num_qubits):
-            qc.x(i)
-            qc.h(i)
-    elif start_state == '+i':
-        for i in range(num_qubits):
-            qc.h(i)
-            qc.s(i)
-    elif start_state == '-i':
-        for i in range(num_qubits):
-            qc.x(i)
-            qc.h(i)
-            qc.s(i)
-    else:
-        raise ValueError("Invalid start state. Must be either '0', '1', '+', '-', '+i', or '-i'")
-    return qc
+def gen_batch_experiment(qc_ls: list, backend, num_qubits: int,
+                         mitigation=False, analysis='default'):
+    exp_ls = []
+
+    for i in range(len(qc_ls)):
+        curr_qc = qc_ls[i]
+        if num_qubits == 1:
+            curr_qubits_used = [0]
+        elif num_qubits == 2:
+            curr_qubits_used = [0, 1]
+
+        if mitigation:
+            curr_exp = MitigatedProcessTomography(curr_qc, backend,
+                                                  physical_qubits=curr_qubits_used,
+                                                  analysis=analysis)
+        else:
+            curr_exp = ProcessTomography(curr_qc, backend,
+                                         physical_qubits=curr_qubits_used,
+                                         analysis=analysis)
+
+        exp_ls.append(curr_exp)
+        print(exp_ls)
+        batch_exp = BatchExperiment(exp_ls,
+                                       flatten_results=False)
+
+    return batch_exp
